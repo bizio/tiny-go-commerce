@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package cart.v1;
+
+option go_package = "github.com/optimatelabs/tiny-go-commerce/pkg/cart/v1";
+
+import "validate/validate.proto";
+
+// The Cart message represents a user's shopping session.
+message Cart {
+  int64 user_id = 1 [(validate.rules).int64.gt = 0];
+  repeated CartItem items = 2;
+  double total_price = 3 [(validate.rules).double.gte = 0];
+}
+
+// The CartItem message represents a product in the cart.
+message CartItem {
+  int64 product_id = 1 [(validate.rules).int64.gt = 0];
+  int32 quantity = 2 [(validate.rules).int32.gt = 0];
+  double line_price = 3 [(validate.rules).double.gte = 0]; 
+}
+
+// Request to get a user's cart.
+message GetCartRequest {
+  int64 user_id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// Response for getting a user's cart.
+message GetCartResponse {
+  Cart cart = 1;
+}
+
+// Request to add an item to the cart.
+message AddItemRequest {
+  int64 user_id = 1 [(validate.rules).int64.gt = 0];
+  int64 product_id = 2 [(validate.rules).int64.gt = 0];
+  int32 quantity = 3 [(validate.rules).int32.gt = 0];
+}
+
+// Response after adding an item to the cart.
+message AddItemResponse {
+  Cart cart = 1;
+}
+
+// Request to remove an item from the cart.
+message RemoveItemRequest {
+  int64 user_id = 1 [(validate.rules).int64.gt = 0];
+  int64 product_id = 2 [(validate.rules).int64.gt = 0];
+}
+
+// Response after removing an item from the cart.
+message RemoveItemResponse {
+  Cart cart = 1;
+}
+
+// Request to clear all items from the cart.
+message ClearCartRequest {
+  int64 user_id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// Response after clearing the cart.
+message ClearCartResponse {
+  Cart cart = 1;
+}
+
+// CartService provides shopping cart operations.
+service CartService {
+  rpc GetCart(GetCartRequest) returns (GetCartResponse);
+  rpc AddItem(AddItemRequest) returns (AddItemResponse);
+  rpc RemoveItem(RemoveItemRequest) returns (RemoveItemResponse);
+  rpc ClearCart(ClearCartRequest) returns (ClearCartResponse);
+}

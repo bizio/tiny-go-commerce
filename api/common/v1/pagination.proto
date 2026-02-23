@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package common.v1;
+
+option go_package = "github.com/optimatelabs/tiny-go-commerce/pkg/common/v1";
+
+import "validate/validate.proto";
+
+// PaginationRequest is a common struct to be used across list requests.
+message PaginationRequest {
+  int32 page_size = 1 [(validate.rules).int32 = {gte: 0, lte: 1000}];
+  string page_token = 2;
+}
+
+// PaginationResponse is a common struct to be used in list responses.
+message PaginationResponse {
+  string next_page_token = 1;
+  int32 total_size = 2;
+}

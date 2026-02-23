@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package user.v1;
+
+option go_package = "github.com/optimatelabs/tiny-go-commerce/pkg/user/v1";
+
+import "validate/validate.proto";
+
+// The User message represents an e-commerce customer.
+message User {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  string email = 2 [(validate.rules).string.email = true];
+  string first_name = 3 [(validate.rules).string.min_len = 1];
+  string last_name = 8 [(validate.rules).string.min_len = 1];
+  string role = 4;
+  string created_at = 5;
+  string updated_at = 6;
+  Address address = 7;
+}
+
+// The Address message represents a physical location.
+message Address {
+  string street = 1 [(validate.rules).string.min_len = 1];
+  string city = 2 [(validate.rules).string.min_len = 1];
+  string state = 3 [(validate.rules).string.min_len = 1];
+  string zip = 4 [(validate.rules).string.min_len = 1];
+  string country = 5 [(validate.rules).string.len = 2]; // e.g. US, IT
+}
+
+// Request to get a user by ID.
+message GetUserRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// Response for getting a user.
+message GetUserResponse {
+  User user = 1;
+}
+
+// Request to create a new user.
+message CreateUserRequest {
+  string email = 1 [(validate.rules).string.email = true];
+  string first_name = 2 [(validate.rules).string.min_len = 1];
+  string last_name = 4 [(validate.rules).string.min_len = 1];
+  string role = 3 [(validate.rules).string = {in: ["CUSTOMER", "ADMIN"]}];
+}
+
+// Response for creating a user.
+message CreateUserResponse {
+  User user = 1;
+}
+
+// UserService provides user management operations.
+service UserService {
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+}

@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package product.v1;
+
+option go_package = "github.com/optimatelabs/tiny-go-commerce/pkg/product/v1";
+
+import "validate/validate.proto";
+
+// The Product message represents an e-commerce product.
+message Product {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  string name = 2 [(validate.rules).string.min_len = 1];
+  string description = 3;
+  double price = 4 [(validate.rules).double.gte = 0];
+  int32 inventory = 5 [(validate.rules).int32.gte = 0];
+  string category = 6 [(validate.rules).string.min_len = 1];
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+// Request to get a product by ID.
+message GetProductRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// Response for getting a product.
+message GetProductResponse {
+  Product product = 1;
+}
+
+// Request to create a new product.
+message CreateProductRequest {
+  string name = 1 [(validate.rules).string.min_len = 1];
+  string description = 2;
+  double price = 3 [(validate.rules).double.gte = 0];
+  int32 inventory = 4 [(validate.rules).int32.gte = 0];
+  string category = 5 [(validate.rules).string.min_len = 1];
+}
+
+// Response for creating a product.
+message CreateProductResponse {
+  Product product = 1;
+}
+
+// Request to update an existing product.
+message UpdateProductRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  string name = 2 [(validate.rules).string.min_len = 1];
+  string description = 3;
+  double price = 4 [(validate.rules).double.gte = 0];
+  int32 inventory = 5 [(validate.rules).int32.gte = 0];
+  string category = 6 [(validate.rules).string.min_len = 1];
+}
+
+// Response for updating a product.
+message UpdateProductResponse {
+  Product product = 1;
+}
+
+// Request to list products, with optional pagination.
+message ListProductsRequest {
+  int32 page_size = 1 [(validate.rules).int32 = {gte: 0, lte: 100}];
+  string page_token = 2;
+}
+
+// Response for listing products.
+message ListProductsResponse {
+  repeated Product products = 1;
+  string next_page_token = 2;
+}
+
+// ProductService provides product management operations.
+service ProductService {
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse);
+  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
+  rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse);
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+}

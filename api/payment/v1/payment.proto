@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "github.com/optimatelabs/tiny-go-commerce/pkg/payment/v1";
+
+import "validate/validate.proto";
+
+// Status of the payment transaction.
+enum PaymentStatus {
+  PAYMENT_STATUS_UNSPECIFIED = 0;
+  PAYMENT_STATUS_PENDING = 1;
+  PAYMENT_STATUS_SUCCESS = 2;
+  PAYMENT_STATUS_FAILED = 3;
+}
+
+// Payment represents an attempt to charge a user for an order.
+message Payment {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  int64 order_id = 2 [(validate.rules).int64.gt = 0];
+  int64 user_id = 3 [(validate.rules).int64.gt = 0];
+  double amount = 4 [(validate.rules).double.gt = 0];
+  string currency = 5 [(validate.rules).string.len = 3]; // e.g. USD, EUR
+  PaymentStatus status = 6 [(validate.rules).enum.defined_only = true];
+  string payment_method = 7 [(validate.rules).string.min_len = 1]; // e.g., "stripe", "credit_card"
+  string transaction_id = 8; // External gateway ID. Empty if pending/failed.
+  string created_at = 9;
+  string updated_at = 10;
+}
+
+// Request to charge a payment method for an order.
+message ProcessPaymentRequest {
+  int64 order_id = 1 [(validate.rules).int64.gt = 0];
+  int64 user_id = 2 [(validate.rules).int64.gt = 0];
+  double amount = 3 [(validate.rules).double.gt = 0];
+  string currency = 4 [(validate.rules).string.len = 3];
+  string payment_method = 5 [(validate.rules).string.min_len = 1];
+}
+
+// Response mapping the newly created/processed Payment record.
+message ProcessPaymentResponse {
+  Payment payment = 1;
+}
+
+// Request to get details of a specific payment transaction.
+message GetPaymentRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// Response returning the requested Payment record.
+message GetPaymentResponse {
+  Payment payment = 1;
+}
+
+// PaymentService provides operations to process and retrieve financial transactions.
+service PaymentService {
+  rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
+  rpc GetPayment(GetPaymentRequest) returns (GetPaymentResponse);
+}

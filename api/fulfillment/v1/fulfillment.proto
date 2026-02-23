@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package fulfillment.v1;
+
+option go_package = "github.com/optimatelabs/tiny-go-commerce/pkg/fulfillment/v1";
+
+import "validate/validate.proto";
+
+// Type of fulfillment method chosen for the order.
+enum FulfillmentType {
+  FULFILLMENT_TYPE_UNSPECIFIED = 0;
+  FULFILLMENT_TYPE_SHIPPING = 1;
+  FULFILLMENT_TYPE_LOCAL_PICKUP = 2;
+}
+
+// Current status of the physical fulfillment.
+enum FulfillmentStatus {
+  FULFILLMENT_STATUS_UNSPECIFIED = 0;
+  FULFILLMENT_STATUS_PREPARING = 1;
+  FULFILLMENT_STATUS_READY_FOR_PICKUP = 2;
+  FULFILLMENT_STATUS_IN_TRANSIT = 3;
+  FULFILLMENT_STATUS_DELIVERED = 4;
+  FULFILLMENT_STATUS_PICKED_UP = 5;
+  FULFILLMENT_STATUS_EXCEPTION = 6;
+}
+
+// Fulfillment represents how an order gets to the customer (shipping or local store pickup).
+message Fulfillment {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  int64 order_id = 2 [(validate.rules).int64.gt = 0];
+  FulfillmentType type = 3 [(validate.rules).enum.defined_only = true];
+  FulfillmentStatus status = 4 [(validate.rules).enum.defined_only = true];
+  
+  // Populated if type == FULFILLMENT_TYPE_SHIPPING
+  ShipmentDetails shipment_details = 5;
+  
+  // Populated if type == FULFILLMENT_TYPE_LOCAL_PICKUP
+  PickupDetails pickup_details = 6;
+  
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+// Specifics for a carrier-based delivery.
+message ShipmentDetails {
+  string tracking_number = 1;
+  string carrier = 2; // e.g., "UPS", "FedEx", "USPS"
+  string estimated_delivery = 3;
+  ShippingAddress destination = 4 [(validate.rules).message.required = true];
+}
+
+// Specifics for a Buy Online, Pick Up In Store (BOPIS) order.
+message PickupDetails {
+  string store_id = 1 [(validate.rules).string.min_len = 1];
+  string pickup_instructions = 2;
+  string pickup_time = 3;
+}
+
+// Basic address representation used strictly for routing.
+message ShippingAddress {
+  string street = 1 [(validate.rules).string.min_len = 1];
+  string city = 2 [(validate.rules).string.min_len = 1];
+  string state = 3 [(validate.rules).string.min_len = 1];
+  string zip = 4 [(validate.rules).string.min_len = 1];
+  string country = 5 [(validate.rules).string.len = 2];
+}
+
+// Request to initialize the fulfillment process for an order.
+message CreateFulfillmentRequest {
+  int64 order_id = 1 [(validate.rules).int64.gt = 0];
+  FulfillmentType type = 2 [(validate.rules).enum = {defined_only: true, not_in: [0]}]; // Must be Shipping or Pickup
+  
+  ShipmentDetails shipment_details = 3;
+  PickupDetails pickup_details = 4;
+}
+
+// Response mapping the newly registered Fulfillment record.
+message CreateFulfillmentResponse {
+  Fulfillment fulfillment = 1;
+}
+
+// Request to fetch tracking or pickup statuses.
+message GetFulfillmentRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// Response returning the current Fulfillment state.
+message GetFulfillmentResponse {
+  Fulfillment fulfillment = 1;
+}
+
+// Request to update the lifecycle status of a package/pickup (e.g., IN_TRANSIT, READY_FOR_PICKUP).
+message UpdateFulfillmentStatusRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  FulfillmentStatus status = 2 [(validate.rules).enum = {defined_only: true, not_in: [0]}];
+  
+  // Optional field to append tracking info if the carrier updates it.
+  string tracking_number = 3; 
+}
+
+// Response after updating a fulfillment status.
+message UpdateFulfillmentStatusResponse {
+  Fulfillment fulfillment = 1;
+}
+
+// FulfillmentService handles warehouse dispatching, carrier handoffs, and local pickups.
+service FulfillmentService {
+  rpc CreateFulfillment(CreateFulfillmentRequest) returns (CreateFulfillmentResponse);
+  rpc GetFulfillment(GetFulfillmentRequest) returns (GetFulfillmentResponse);
+  rpc UpdateFulfillmentStatus(UpdateFulfillmentStatusRequest) returns (UpdateFulfillmentStatusResponse);
+}

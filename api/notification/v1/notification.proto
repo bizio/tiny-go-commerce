@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package notification.v1;
+
+option go_package = "github.com/optimatelabs/tiny-go-commerce/pkg/notification/v1";
+
+import "validate/validate.proto";
+
+// How the notification should be delivered to the user.
+enum NotificationType {
+  NOTIFICATION_TYPE_UNSPECIFIED = 0;
+  NOTIFICATION_TYPE_EMAIL = 1;
+  NOTIFICATION_TYPE_SMS = 2;
+  NOTIFICATION_TYPE_PUSH = 3;
+}
+
+// The delivery state of a scheduled notification.
+enum NotificationStatus {
+  NOTIFICATION_STATUS_UNSPECIFIED = 0;
+  NOTIFICATION_STATUS_PENDING = 1;
+  NOTIFICATION_STATUS_SENT = 2;
+  NOTIFICATION_STATUS_FAILED = 3;
+}
+
+// Notification represents an outbound transactional message.
+message Notification {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  int64 user_id = 2 [(validate.rules).int64.gt = 0];
+  NotificationType type = 3 [(validate.rules).enum.defined_only = true];
+  
+  // The contact destination (email address or phone number)
+  string destination = 4 [(validate.rules).string.min_len = 1];
+  
+  string subject = 5; 
+  string body = 6 [(validate.rules).string.min_len = 1];
+  
+  NotificationStatus status = 7 [(validate.rules).enum.defined_only = true];
+  string created_at = 8;
+  string sent_at = 9;
+}
+
+// Request to queue an outbound email, text, or push alert.
+message SendNotificationRequest {
+  int64 user_id = 1 [(validate.rules).int64.gt = 0];
+  NotificationType type = 2 [(validate.rules).enum = {defined_only: true, not_in: [0]}];
+  string destination = 3 [(validate.rules).string.min_len = 1];
+  
+  string subject = 4; // Optional for SMS/Push
+  string body = 5 [(validate.rules).string.min_len = 1];
+}
+
+// Response after queuing a notification.
+message SendNotificationResponse {
+  Notification notification = 1;
+}
+
+// Request to poll the delivery status of a specific message.
+message GetNotificationRequest {
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// Response returning the delivery status of the message.
+message GetNotificationResponse {
+  Notification notification = 1;
+}
+
+// NotificationService abstracts interactions with third-party providers (SendGrid, SNS, etc.)
+service NotificationService {
+  rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse);
+  rpc GetNotification(GetNotificationRequest) returns (GetNotificationResponse);
+}

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package common.v1;
+
+option go_package = "github.com/optimatelabs/tiny-go-commerce/pkg/common/v1";
+
+// ErrorResponse describes a standard error payload that can be returned 
+// across all e-commerce microservices.
+message ErrorResponse {
+  // A machine-readable error code (e.g. "USER_NOT_FOUND")
+  string code = 1;
+  // A human-readable error message describing the issue
+  string message = 2;
+  // Additional context or validation errors
+  map<string, string> details = 3;
+}
