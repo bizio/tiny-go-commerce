@@ -50,8 +50,22 @@ message CreateUserResponse {
   User user = 1;
 }
 
+// Request for customer signup
+message SignupRequest {
+  string email = 1 [(validate.rules).string.email = true];
+  string password = 2 [(validate.rules).string.min_len = 8];
+  string first_name = 3 [(validate.rules).string.min_len = 1];
+  string last_name = 4 [(validate.rules).string.min_len = 1];
+}
+
+// Response for customer signup
+message SignupResponse {
+    int64 id = 1;
+}
+
 // UserService provides user management operations.
 service UserService {
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  rpc Signup(SignupRequest) returns (SignupResponse);
 }
